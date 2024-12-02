@@ -1,150 +1,110 @@
-# python3 -- Weather Application using API
-
-# importing the libraries
 from tkinter import *
-import requests
-import json
-import datetime
+from tkinter import ttk
 from PIL import ImageTk, Image
+import requests
+import datetime
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-# necessary details
+# Initialize window
 root = Tk()
 root.title("Weather App")
 root.geometry("450x700")
-root['background'] = "white"
+root.configure(bg="#E8E8E8")  # Light background color
 
-# Image
-new = ImageTk.PhotoImage(Image.open('logo.png'))
-panel = Label(root, image=new)
-panel.place(x=0, y=520)
+# Rounded Rectangle Function
+def create_rounded_rectangle(canvas, x1, y1, x2, y2, radius=25, **kwargs):
+    """Draw a rounded rectangle on the canvas."""
+    points = [
+        x1 + radius, y1,  # Top-left
+        x2 - radius, y1,  # Top-right
+        x2 - radius, y1, x2, y1,  # Curve
+        x2, y1 + radius,  # Right-side
+        x2, y2 - radius,  # Bottom-right
+        x2, y2 - radius, x2, y2,  # Curve
+        x2 - radius, y2,  # Bottom side
+        x1 + radius, y2,  # Bottom-left
+        x1 + radius, y2, x1, y2,  # Curve
+        x1, y2 - radius,  # Left-side
+        x1, y1 + radius,  # Top-left
+        x1, y1 + radius, x1, y1,  # Curve
+    ]
+    return canvas.create_polygon(points, smooth=True, **kwargs)
 
+# Stylish Fonts
+title_font = ("Helvetica", 20, "bold")
+label_font = ("Helvetica", 15)
+data_font = ("Helvetica", 15, "italic")
 
-# Dates
-dt = datetime.datetime.now()
-date = Label(root, text=dt.strftime('%A--'), bg='white', font=("bold", 15))
-date.place(x=5, y=130)
-month = Label(root, text=dt.strftime('%m %B'), bg='white', font=("bold", 15))
-month.place(x=100, y=130)
+# Header
+header = Label(root, text="Weather App", font=title_font, bg='#E8E8E8', fg='#333')
+header.pack(pady=20)
 
-# Time
-hour = Label(root, text=dt.strftime('%I : %M %p'),
-			bg='white', font=("bold", 15))
-hour.place(x=10, y=160)
+# Date
+current_date = datetime.datetime.now().strftime("%A, %d %B %Y")
+date_label = Label(root, text=current_date, font=("Helvetica", 15), bg="#E8E8E8", fg="#333")
+date_label.pack(pady=10)
 
-# Theme for the respective time the application is used
-if int((dt.strftime('%I'))) >= 8 & int((dt.strftime('%I'))) <= 5:
-	img = ImageTk.PhotoImage(Image.open('moon.png'))
-	panel = Label(root, image=img)
-	panel.place(x=210, y=200)
-else:
-	img = ImageTk.PhotoImage(Image.open('sun.png'))
-	panel = Label(root, image=img)
-	panel.place(x=210, y=200)
-
-
-# City Search
+# City Entry
 city_name = StringVar()
-city_entry = Entry(root, textvariable=city_name, width=45)
-city_entry.grid(row=1, column=0, ipady=10, stick=W+E+N+S)
+city_entry = ttk.Entry(root, textvariable=city_name, font=label_font, justify='center')
+city_entry.pack(pady=10, ipady=5)
 
+# Search Button
+def fetch_weather():
+    city = city_name.get()  # Get city from user input
+    api_key = os.getenv('api_key')
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={api_key}"
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            weather_data = response.json()
+            temp = weather_data['main']['temp']
+            humidity = weather_data['main']['humidity']
+            wind_speed = weather_data['wind']['speed']
 
-def city_name():
+            # Update card content
+            temp_label.config(text=f"{temp} °C")
+            humidity_label.config(text=f"Humidity: {humidity} %")
+            wind_label.config(text=f"Wind Speed: {wind_speed} m/s")
+            city_label.config(text=f"{city.title()}")
+        else:
+            temp_label.config(text="--")
+            humidity_label.config(text="Error: City not found.")
+            wind_label.config(text="--")
+            city_label.config(text="")
+    except Exception as e:
+        temp_label.config(text="Error")
+        humidity_label.config(text=str(e))
 
-	# API Call
-	api_request = requests.get("https://api.openweathermap.org/data/2.5/weather?q="
-							+ city_entry.get() + "&units=metric&appid="+api_key)
+search_button = ttk.Button(root, text="Search", command=fetch_weather)
+search_button.pack(pady=10)
 
-	api = json.loads(api_request.content)
+# Canvas for Rounded Card
+canvas = Canvas(root, width=300, height=250, bg="#E8E8E8", highlightthickness=0)
+canvas.pack(pady=20)
 
-	# Temperatures
-	y = api['main']
-	current_temprature = y['temp']
-	humidity = y['humidity']
-	tempmin = y['temp_min']
-	tempmax = y['temp_max']
+# Create the rounded rectangle (card)
+create_rounded_rectangle(canvas, 10, 10, 290, 240, radius=30, fill="white", outline="#CCCCCC")
 
-	# Coordinates
-	x = api['coord']
-	longtitude = x['lon']
-	latitude = x['lat']
+# Add Labels inside the card
+city_label = Label(canvas, text="City Name", font=label_font, bg="white", fg="#333")
+canvas.create_window(150, 40, window=city_label)
 
-	# Country
-	z = api['sys']
-	country = z['country']
-	citi = api['name']
+temp_label = Label(canvas, text="-- °C", font=("Helvetica", 50), bg="white", fg="#FF5733")
+canvas.create_window(150, 100, window=temp_label)
 
-	# Adding the received info into the screen
-	lable_temp.configure(text=current_temprature)
-	lable_humidity.configure(text=humidity)
-	max_temp.configure(text=tempmax)
-	min_temp.configure(text=tempmin)
-	lable_lon.configure(text=longtitude)
-	lable_lat.configure(text=latitude)
-	lable_country.configure(text=country)
-	lable_citi.configure(text=citi)
+humidity_label = Label(canvas, text="Humidity: --", font=data_font, bg="white")
+canvas.create_window(150, 150, window=humidity_label)
 
+wind_label = Label(canvas, text="Wind Speed: --", font=data_font, bg="white")
+canvas.create_window(150, 190, window=wind_label)
 
-# Search Bar and Button
-city_nameButton = Button(root, text="Search", command=city_name)
-city_nameButton.grid(row=1, column=1, padx=5, stick=W+E+N+S)
-
-
-# Country Names and Coordinates
-lable_citi = Label(root, text="...", width=0, 
-				bg='white', font=("bold", 15))
-lable_citi.place(x=10, y=63)
-
-lable_country = Label(root, text="...", width=0, 
-					bg='white', font=("bold", 15))
-lable_country.place(x=135, y=63)
-
-lable_lon = Label(root, text="...", width=0,
-				bg='white', font=("Helvetica", 15))
-lable_lon.place(x=25, y=95)
-lable_lat = Label(root, text="...", width=0,
-				bg='white', font=("Helvetica", 15))
-lable_lat.place(x=95, y=95)
-
-# Current Temperature
-
-lable_temp = Label(root, text="...", width=0, bg='white',
-				font=("Helvetica", 110), fg='black')
-lable_temp.place(x=18, y=220)
-
-# Other temperature details
-
-humi = Label(root, text="Humidity: ", width=0, 
-			bg='white', font=("bold", 15))
-humi.place(x=3, y=400)
-
-lable_humidity = Label(root, text="...", width=0,
-					bg='white', font=("bold", 15))
-lable_humidity.place(x=107, y=400)
-
-
-maxi = Label(root, text="Max. Temp.: ", width=0, 
-			bg='white', font=("bold", 15))
-maxi.place(x=3, y=430)
-
-max_temp = Label(root, text="...", width=0, 
-				bg='white', font=("bold", 15))
-max_temp.place(x=128, y=430)
-
-
-mini = Label(root, text="Min. Temp.: ", width=0, 
-			bg='white', font=("bold", 15))
-mini.place(x=3, y=460)
-
-min_temp = Label(root, text="...", width=0, 
-				bg='white', font=("bold", 15))
-min_temp.place(x=128, y=460)
-
-
-# Note
-note = Label(root, text="All temperatures in degree celsius",
-			bg='white', font=("italic", 10))
-note.place(x=95, y=495)
-
+# Footer
+footer = Label(root, text="All temperatures in Celsius", font=("italic", 10), bg="#E8E8E8")
+footer.pack(side=BOTTOM, pady=10)
 
 root.mainloop()
