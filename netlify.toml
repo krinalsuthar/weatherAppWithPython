@@ -1,8 +1,0 @@
-[build]
-  base = "."                             # Base directory where the build command runs
-  command = "python weather.py"          # Build command to generate static files
-  publish = "output"                     # Directory where the static files are published
-
-# Optional: Specify functions directory if you have serverless functions
-[functions]
-  directory = "netlify/functions"        # Directory for serverless functions (if any)
