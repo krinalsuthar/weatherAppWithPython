@@ -7,7 +7,6 @@ The **Weather App** is a simple Python application that allows users to check cu
 - **🌡️ Current Weather:** View the current temperature, humidity, and wind speed for any location.
 - **☁️ Weather Description:** Get a brief description of the current weather (e.g., sunny, cloudy, rainy).
 - **🔍 Custom Location Search:** Search for weather data by city name or ZIP code.
-- **🖥️ Simple Command-Line Interface:** A smooth, easy-to-use interface for quick weather lookups.
 
 ## 💻 Technologies Used
 - **🐍 Python 3.x**
